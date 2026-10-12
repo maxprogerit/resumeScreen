@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: resume
+      POSTGRES_PASSWORD: resume
+      POSTGRES_DB: resume_screener
+    # Host port 5434 so it does not clash with a local PostgreSQL on 5432.
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U resume -d resume_screener"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+psycopg://resume:resume@db:5432/resume_screener
+      # Set SEED_DEMO=1 to load synthetic demo data (flagged "demo") on start.
+      SEED_DEMO: ${SEED_DEMO:-0}
+      API_KEY_ADMIN: ${API_KEY_ADMIN:-}
+      ENABLE_DOCS: ${ENABLE_DOCS:-false}
+    ports:
+      - "8100:8000"
+
+volumes:
+  pgdata:

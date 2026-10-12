@@ -1,0 +1,70 @@
+[project]
+name = "resume-screener"
+version = "0.1.0"
+description = "AI resume parsing and candidate matching API (Python, FastAPI)"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "sqlalchemy>=2.0.30",
+    "alembic>=1.13",
+    "psycopg[binary]>=3.2",
+    "openai>=1.60",
+    "numpy>=1.26",
+    "pypdf>=5.0",
+    "python-docx>=1.1",
+    "python-multipart>=0.0.9",
+    "pdfplumber>=0.11",
+    "pypdfium2>=4.30",
+    "rapidocr-onnxruntime>=1.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2",
+    "httpx>=0.27",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "pre-commit>=3.8",
+    "fpdf2>=2.8",
+    "uv",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["alembic/versions"]
+
+[tool.ruff.lint.isort]
+known-third-party = ["alembic"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "S", "C4", "PT"]
+ignore = ["E501", "PT018"]  # the formatter owns line length; long prompt strings are intentional
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "PT011"]
+"scripts/**" = ["S311"]  # synthetic data, not security-sensitive randomness
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["app", "tests"]
+exclude = ["alembic/"]
+
+[[tool.mypy.overrides]]
+module = ["rapidocr_onnxruntime", "pypdfium2"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
