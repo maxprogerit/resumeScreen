@@ -10,7 +10,14 @@ T = TypeVar("T", bound=BaseModel)
 
 
 class LLMUnavailable(Exception):
-    """No API key, network failure, quota, etc. Not worth retrying immediately."""
+    """No API key, network failure, quota, etc. Not worth retrying immediately.
+
+    `reason` is a short machine code shown to the recruiter, never provider message text.
+    """
+
+    def __init__(self, message: str = "", reason: str = "llm_unavailable") -> None:
+        super().__init__(message)
+        self.reason = reason
 
 
 class LLMInvalidOutput(Exception):

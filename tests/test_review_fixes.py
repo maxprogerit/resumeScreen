@@ -161,3 +161,36 @@ def test_explanation_text_is_truncated(make_env: Callable[..., Env]) -> None:
     cid = env.client.get(f"/api/jobs/{job['id']}/candidates").json()[0]["id"]
     summary = env.client.get(f"/api/candidates/{cid}").json()["match"]["explanation"]["summary"]
     assert len(summary) <= 1500
+
+
+def test_adapter_reports_actionable_reasons() -> None:
+    import httpx
+
+    request = httpx.Request("POST", "https://api.openai.com/v1/chat/completions")
+
+    def failing(status: int, exc_type: type[openai.APIStatusError]) -> Callable[..., Any]:
+        def raiser(**_: Any) -> None:
+            raise exc_type(
+                "x",
+                response=httpx.Response(status, request=request),  # type: ignore[arg-type]
+                body=None,
+            )
+
+        return raiser
+
+    cases = [
+        (401, openai.AuthenticationError, "llm_auth_error"),
+        (403, openai.PermissionDeniedError, "llm_auth_error"),
+        (404, openai.NotFoundError, "llm_model_not_found"),
+        (429, openai.RateLimitError, "llm_rate_limited"),
+        (500, openai.InternalServerError, "llm_unavailable"),
+    ]
+    for status, exc_type, reason in cases:
+        client = _client_with(failing(status, exc_type))
+        with pytest.raises(LLMUnavailable) as info:
+            client.parse(system="s", user="u", schema=ExplanationResponse)
+        assert info.value.reason == reason
+
+    with pytest.raises(LLMUnavailable) as no_key:
+        OpenAIClient(Settings(_env_file=None, openai_api_key=None))  # type: ignore[call-arg]
+    assert no_key.value.reason == "llm_not_configured"

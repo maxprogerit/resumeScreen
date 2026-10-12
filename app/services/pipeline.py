@@ -120,8 +120,8 @@ def _process(
     try:
         llm = llm_provider()
         extracted = extract_resume(llm, candidate.raw_text, loose="ocr" in candidate.parse_notes)
-    except LLMUnavailable:
-        return _needs_review(db, candidate, "llm_unavailable")
+    except LLMUnavailable as exc:
+        return _needs_review(db, candidate, exc.reason)
     except ExtractionFailed as exc:
         return _needs_review(db, candidate, exc.reason)
 

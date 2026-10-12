@@ -29,8 +29,8 @@ def extract_resume(llm: LLMClient, raw_text: str, *, loose: bool = False) -> Ext
             )
         except LLMInvalidOutput:
             continue
-        except LLMUnavailable:
-            raise ExtractionFailed("llm_unavailable") from None
+        except LLMUnavailable as exc:
+            raise ExtractionFailed(exc.reason) from None
         return postprocess(resume, raw_text, loose=loose)
     raise ExtractionFailed(last)
 
